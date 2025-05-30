@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Shooter Modern</title>
+    <style>
+        :root {
+            --primary-color: #6a5acd;
+            --secondary-color: #483d8b;
+            --accent-color: #9370db;
+            --enemy-color: #ff6347;
+            --bullet-color: #ffd700;
+            --bg-color: #0f0c29;
+            --text-color: #ffffff;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            height: 600px;
+            background: linear-gradient(to bottom, #1a1a2e, #16213e);
+            border: 3px solid var(--primary-color);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(106, 90, 205, 0.5);
+        }
+
+        #player {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background-color: var(--accent-color);
+            border-radius: 50%;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 0 15px var(--accent-color);
+            z-index: 10;
+        }
+
+        .bullet {
+            position: absolute;
+            width: 8px;
+            height: 20px;
+            background-color: var(--bullet-color);
+            border-radius: 4px;
+            box-shadow: 0 0 10px var(--bullet-color);
+            z-index: 5;
+        }
+
+        .enemy {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background-color: var(--enemy-color);
+            border-radius: 5px;
+            box-shadow: 0 0 10px var(--enemy-color);
+            z-index: 5;
+        }
+
+        .explosion {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background-color: orange;
+            border-radius: 50%;
+            opacity: 0;
+            z-index: 15;
+            animation: explode 0.5s ease-out;
+        }
+
+        @keyframes explode {
+            0% { transform: scale(0.1); opacity: 1; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+
+        #score-display {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 1.5rem;
+            color: var(--text-color);
+            z-index: 20;
+        }
+
+        #health-display {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 1.5rem;
+            color: var(--text-color);
+            z-index: 20;
+        }
+
+        #controls {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .control-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s;
+        }
+
+        .control-btn:active {
+            transform: scale(0.95);
+            background-color: var(--secondary-color);
+        }
+
+        #fire-btn {
+            background-color: var(--enemy-color);
+            width: 80px;
+            height: 80px;
+            font-size: 2rem;
+        }
+
+        #game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 30;
+        }
+
+        #game-over h2 {
+            font-size: 3rem;
+            color: var(--enemy-color);
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px var(--enemy-color);
+        }
+
+        #restart-btn {
+            padding: 15px 30px;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        #restart-btn:hover {
+            background-color: var(--primary-color);
+            transform: scale(1.05);
+        }
+
+        .copyright {
+            margin-top: 20px;
+            color: var(--text-color);
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        @media (max-width: 600px) {
+            #game-container {
+                height: 400px;
+            }
+            
+            #player {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .enemy {
+                width: 30px;
+                height: 30px;
+            }
+            
+            .control-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 1.2rem;
+            }
+            
+            #fire-btn {
+                width: 70px;
+                height: 70px;
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Space Shooter Modern</h1>
+    
+    <div id="game-container">
+        <div id="player"></div>
+        <div id="score-display">Skor: 0</div>
+        <div id="health-display">Nyawa: ❤️❤️❤️</div>
+        
+        <div id="game-over">
+            <h2>GAME OVER</h2>
+            <p id="final-score">Skor Akhir: 0</p>
+            <button id="restart-btn">Main Lagi</button>
+        </div>
+    </div>
+    
+    <div id="controls">
+        <div class="control-row">
+            <button class="control-btn" id="left-btn">←</button>
+            <button class="control-btn" id="up-btn">↑</button>
+            <button class="control-btn" id="right-btn">→</button>
+        </div>
+        <button class="control-btn" id="fire-btn">🔫</button>
+    </div>
+    
+    <div class="copyright">
+        &copy; <span id="year"></span> @lutfibatawi
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set tahun hak cipta
+            document.getElementById('year').textContent = new Date().getFullYear();
+            
+            // Elemen DOM
+            const gameContainer = document.getElementById('game-container');
+            const player = document.getElementById('player');
+            const scoreDisplay = document.getElementById('score-display');
+            const healthDisplay = document.getElementById('health-display');
+            const gameOverScreen = document.getElementById('game-over');
+            const finalScoreDisplay = document.getElementById('final-score');
+            const restartBtn = document.getElementById('restart-btn');
+            const controlButtons = {
+                left: document.getElementById('left-btn'),
+                up: document.getElementById('up-btn'),
+                right: document.getElementById('right-btn'),
+                fire: document.getElementById('fire-btn')
+            };
+            
+            // Variabel game
+            let score = 0;
+            let health = 3;
+            let gameRunning = true;
+            let playerX = gameContainer.offsetWidth / 2 - 25;
+            let playerY = gameContainer.offsetHeight - 70;
+            let playerSpeed = 8;
+            let bullets = [];
+            let enemies = [];
+            let enemySpawnRate = 2000; // ms
+            let lastEnemySpawn = 0;
+            let keysPressed = {
+                ArrowLeft: false,
+                ArrowRight: false,
+                ArrowUp: false,
+                ArrowDown: false,
+                ' ': false
+            };
+            
+            // Inisialisasi player position
+            player.style.left = `${playerX}px`;
+            player.style.top = `${playerY}px`;
+            
+            // Fungsi untuk membuat peluru
+            function fireBullet() {
+                if (!gameRunning) return;
+                
+                const bullet = document.createElement('div');
+                bullet.className = 'bullet';
+                const bulletX = playerX + 21;
+                const bulletY = playerY - 20;
+                bullet.style.left = `${bulletX}px`;
+                bullet.style.top = `${bulletY}px`;
+                gameContainer.appendChild(bullet);
+                
+                bullets.push({
+                    element: bullet,
+                    x: bulletX,
+                    y: bulletY,
+                    speed: 10
+                });
+            }
+            
+            // Fungsi untuk membuat musuh
+            function spawnEnemy() {
+                if (!gameRunning) return;
+                
+                const enemy = document.createElement('div');
+                enemy.className = 'enemy';
+                const enemyX = Math.random() * (gameContainer.offsetWidth - 40);
+                const enemyY = -40;
+                enemy.style.left = `${enemyX}px`;
+                enemy.style.top = `${enemyY}px`;
+                gameContainer.appendChild(enemy);
+                
+                enemies.push({
+                    element: enemy,
+                    x: enemyX,
+                    y: enemyY,
+                    speed: 2 + Math.random() * 2 + Math.floor(score / 500)
+                });
+            }
+            
+            // Fungsi untuk membuat ledakan
+            function createExplosion(x, y) {
+                const explosion = document.createElement('div');
+                explosion.className = 'explosion';
+                explosion.style.left = `${x - 30}px`;
+                explosion.style.top = `${y - 30}px`;
+                gameContainer.appendChild(explosion);
+                
+                setTimeout(() => {
+                    explosion.remove();
+                }, 500);
+            }
+            
+            // Fungsi untuk update posisi player
+            function updatePlayerPosition() {
+                if (keysPressed.ArrowLeft && playerX > 0) {
+                    playerX -= playerSpeed;
+                }
+                if (keysPressed.ArrowRight && playerX < gameContainer.offsetWidth - 50) {
+                    playerX += playerSpeed;
+                }
+                if (keysPressed.ArrowUp && playerY > 0) {
+                    playerY -= playerSpeed;
+                }
+                if (keysPressed.ArrowDown && playerY < gameContainer.offsetHeight - 50) {
+                    playerY += playerSpeed;
+                }
+                
+                player.style.left = `${playerX}px`;
+                player.style.top = `${playerY}px`;
+            }
+            
+            // Fungsi untuk update peluru
+            function updateBullets() {
+                for (let i = bullets.length - 1; i >= 0; i--) {
+                    const bullet = bullets[i];
+                    bullet.y -= bullet.speed;
+                    bullet.element.style.top = `${bullet.y}px`;
+                    
+                    // Hapus peluru jika keluar layar
+                    if (bullet.y < -20) {
+                        bullet.element.remove();
+                        bullets.splice(i, 1);
+                    }
+                }
+            }
+            
+            // Fungsi untuk update musuh
+            function updateEnemies() {
+                for (let i = enemies.length - 1; i >= 0; i--) {
+                    const enemy = enemies[i];
+                    enemy.y += enemy.speed;
+                    enemy.element.style.top = `${enemy.y}px`;
+                    
+                    // Hapus musuh jika keluar layar
+                    if (enemy.y > gameContainer.offsetHeight) {
+                        enemy.element.remove();
+                        enemies.splice(i, 1);
+                        decreaseHealth();
+                    }
+                }
+            }
+            
+            // Fungsi untuk deteksi tabrakan
+            function checkCollisions() {
+                // Peluru dengan musuh
+                for (let i = bullets.length - 1; i >= 0; i--) {
+                    const bullet = bullets[i];
+                    
+                    for (let j = enemies.length - 1; j >= 0; j--) {
+                        const enemy = enemies[j];
+                        
+                        if (
+                            bullet.x < enemy.x + 40 &&
+                            bullet.x + 8 > enemy.x &&
+                            bullet.y < enemy.y + 40 &&
+                            bullet.y + 20 > enemy.y
+                        ) {
+                            // Tabrakan terjadi
+                            createExplosion(enemy.x + 20, enemy.y + 20);
+                            bullet.element.remove();
+                            bullets.splice(i, 1);
+                            enemy.element.remove();
+                            enemies.splice(j, 1);
+                            increaseScore();
+                            break;
+                        }
+                    }
+                }
+                
+                // Player dengan musuh
+                for (let i = enemies.length - 1; i >= 0; i--) {
+                    const enemy = enemies[i];
+                    
+                    if (
+                        playerX < enemy.x + 40 &&
+                        playerX + 50 > enemy.x &&
+                        playerY < enemy.y + 40 &&
+                        playerY + 50 > enemy.y
+                    ) {
+                        // Tabrakan terjadi
+                        createExplosion(enemy.x + 20, enemy.y + 20);
+                        enemy.element.remove();
+                        enemies.splice(i, 1);
+                        decreaseHealth();
+                    }
+                }
+            }
+            
+            // Fungsi untuk menambah skor
+            function increaseScore() {
+                score += 10;
+                scoreDisplay.textContent = `Skor: ${score}`;
+                
+                // Tingkatkan kesulitan setiap 500 poin
+                if (score > 0 && score % 500 === 0) {
+                    enemySpawnRate = Math.max(500, enemySpawnRate - 100);
+                }
+            }
+            
+            // Fungsi untuk mengurangi nyawa
+            function decreaseHealth() {
+                health--;
+                updateHealthDisplay();
+                
+                if (health <= 0) {
+                    gameOver();
+                }
+            }
+            
+            // Fungsi untuk update tampilan nyawa
+            function updateHealthDisplay() {
+                let hearts = '';
+                for (let i = 0; i < health; i++) {
+                    hearts += '❤️';
+                }
+                healthDisplay.textContent = `Nyawa: ${hearts}`;
+            }
+            
+            // Fungsi game over
+            function gameOver() {
+                gameRunning = false;
+                finalScoreDisplay.textContent = `Skor Akhir: ${score}`;
+                gameOverScreen.style.display = 'flex';
+            }
+            
+            // Fungsi reset game
+            function resetGame() {
+                // Hapus semua peluru dan musuh
+                bullets.forEach(bullet => bullet.element.remove());
+                enemies.forEach(enemy => enemy.element.remove());
+                
+                // Reset variabel
+                bullets = [];
+                enemies = [];
+                score = 0;
+                health = 3;
+                playerX = gameContainer.offsetWidth / 2 - 25;
+                playerY = gameContainer.offsetHeight - 70;
+                enemySpawnRate = 2000;
+                lastEnemySpawn = 0;
+                
+                // Update tampilan
+                player.style.left = `${playerX}px`;
+                player.style.top = `${playerY}px`;
+                scoreDisplay.textContent = `Skor: ${score}`;
+                updateHealthDisplay();
+                gameOverScreen.style.display = 'none';
+                gameRunning = true;
+            }
+            
+            // Event listener untuk keyboard
+            document.addEventListener('keydown', (e) => {
+                if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' '].includes(e.key)) {
+                    keysPressed[e.key] = true;
+                    
+                    // Animasi tombol
+                    if (e.key === 'ArrowLeft') controlButtons.left.style.transform = 'scale(0.9)';
+                    if (e.key === 'ArrowRight') controlButtons.right.style.transform = 'scale(0.9)';
+                    if (e.key === 'ArrowUp') controlButtons.up.style.transform = 'scale(0.9)';
+                    if (e.key === ' ') controlButtons.fire.style.transform = 'scale(0.9)';
+                }
+                
+                if (e.key === ' ' && gameRunning) {
+                    fireBullet();
+                }
+            });
+            
+            document.addEventListener('keyup', (e) => {
+                if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' '].includes(e.key)) {
+                    keysPressed[e.key] = false;
+                    
+                    // Reset animasi tombol
+                    if (e.key === 'ArrowLeft') controlButtons.left.style.transform = '';
+                    if (e.key === 'ArrowRight') controlButtons.right.style.transform = '';
+                    if (e.key === 'ArrowUp') controlButtons.up.style.transform = '';
+                    if (e.key === ' ') controlButtons.fire.style.transform = '';
+                }
+            });
+            
+            // Event listener untuk tombol kontrol layar
+            controlButtons.left.addEventListener('mousedown', () => keysPressed.ArrowLeft = true);
+            controlButtons.left.addEventListener('mouseup', () => keysPressed.ArrowLeft = false);
+            controlButtons.left.addEventListener('mouseleave', () => keysPressed.ArrowLeft = false);
+            
+            controlButtons.right.addEventListener('mousedown', () => keysPressed.ArrowRight = true);
+            controlButtons.right.addEventListener('mouseup', () => keysPressed.ArrowRight = false);
+            controlButtons.right.addEventListener('mouseleave', () => keysPressed.ArrowRight = false);
+            
+            controlButtons.up.addEventListener('mousedown', () => keysPressed.ArrowUp = true);
+            controlButtons.up.addEventListener('mouseup', () => keysPressed.ArrowUp = false);
+            controlButtons.up.addEventListener('mouseleave', () => keysPressed.ArrowUp = false);
+            
+            controlButtons.fire.addEventListener('click', fireBullet);
+            
+            restartBtn.addEventListener('click', resetGame);
+            
+            // Game loop
+            function gameLoop(timestamp) {
+                if (gameRunning) {
+                    updatePlayerPosition();
+                    updateBullets();
+                    updateEnemies();
+                    checkCollisions();
+                    
+                    // Spawn musuh secara berkala
+                    if (timestamp - lastEnemySpawn > enemySpawnRate) {
+                        spawnEnemy();
+                        lastEnemySpawn = timestamp;
+                    }
+                }
+                
+                requestAnimationFrame(gameLoop);
+            }
+            
+            // Mulai game loop
+            requestAnimationFrame(gameLoop);
+        });
+    </script>
+</body>
+</html>
